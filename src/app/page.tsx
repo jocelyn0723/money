@@ -27,15 +27,16 @@ export default function HomePage() {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) {
-        window.location.href = "/login";
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        setUser({ email: session.user.email, id: session.user.id });
+        fetchExpenses(session.user.id);
       } else {
-        setUser({ email: data.user.email, id: data.user.id });
-        fetchExpenses(data.user.id);
+        window.location.href = "/login";
       }
       setChecking(false);
     });
+    return () => subscription.unsubscribe();
   }, []);
 
   async function fetchExpenses(userId: string) {
